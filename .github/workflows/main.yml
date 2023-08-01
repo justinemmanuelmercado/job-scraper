@@ -46,10 +46,7 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
 
-    - name: SCP your binary to your droplet
+    - name: Deploy to Digital Ocean
       run: |
         scp -P 2269 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa scraper root@${{ secrets.DROPLET_IP }}:/root/scraper
-
-    - name: Execute the binary on droplet
-      run: |
-        ssh -p 2269 -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.DROPLET_IP }} "/root/scraper"
+        ssh -p 2222 -o StrictHostKeyChecking=no root@@{{ secrets.DROPLET_IP }}'chmod +x /root/scraper; /root/scraper'
