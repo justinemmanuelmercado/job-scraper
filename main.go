@@ -14,12 +14,11 @@ import (
 	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
 )
 
-func loadEnvFile() error {
+func loadEnvFile() {
 	err := godotenv.Load()
 	if err != nil {
-		return fmt.Errorf("error loading environment variables %w", err)
+		log.Println("error loading environment variables %w", err)
 	}
-	return nil
 }
 
 func insertNotices(newNotices []*models.Notice, db *pgx.Conn) error {
@@ -54,10 +53,7 @@ func getRedditNotices(source *store.Source) ([]*models.Notice, error) {
 }
 
 func main() {
-	err := loadEnvFile()
-	if err != nil {
-		log.Fatalf("Error loading environment variables: %v\n", err)
-	}
+	loadEnvFile()
 
 	db, err := setUpDatabase()
 	if err != nil {

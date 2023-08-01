@@ -1,0 +1,55 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.20
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: go get -v -t -d ./...
+
+    - name: Build
+      run: go build -v -o scraper
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: scraper
+        path: |
+          ./scraper
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download the binary
+      uses: actions/download-artifact@v2
+      with:
+        name: my_project
+
+    - name: Install SSH key
+      run: |
+        mkdir -p ~/.ssh/
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: SCP your binary to your droplet
+      run: |
+        scp -P 2269 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa my_project root@${{ secrets.DROPLET_IP }}:/root/scraper
+
+    - name: Execute the binary on droplet
+      run: |
+        ssh -p 2269 -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.DROPLET_IP }} "/root/scraper"
