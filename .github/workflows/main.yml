@@ -49,4 +49,4 @@ jobs:
     - name: Deploy to Digital Ocean
       run: |
         scp -P 2269 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa scraper root@${{ secrets.DROPLET_IP }}:/root/scraper
-        ssh -p 2269 -o StrictHostKeyChecking=no root@{{ secrets.DROPLET_IP }} 'chmod +x /root/scraper; /root/scraper'
+        ssh -p 2269 -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'chmod +x /root/scraper; /root/scraper'
