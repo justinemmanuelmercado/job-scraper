@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/discord"
@@ -9,8 +12,6 @@ import (
 	"github.com/justinemmanuelmercado/go-scraper/pkg/reddit"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/rss_feed"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
-	"log"
-	"os"
 )
 
 func loadEnvFile() error {
@@ -27,7 +28,10 @@ func insertNotices(newNotices []*models.Notice, db *pgx.Conn) error {
 }
 
 func setUpDatabase() (*pgx.Conn, error) {
-	dbUrl := os.Getenv("DATABASE_URL")
+	dbPw := os.Getenv("POSTGRES_PASSWORD")
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbName := os.Getenv("POSTGRES_DB")
+	dbUrl := "postgresql://" + dbUser + ":" + dbPw + "@localhost:5432/" + dbName + "?sslmode=disable"
 	db, err := store.OpenDB(dbUrl)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
