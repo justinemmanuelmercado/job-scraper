@@ -2,8 +2,10 @@ package discord
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"os"
+	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func InitDiscordClient() (*discordgo.Session, error) {
@@ -16,11 +18,14 @@ func InitDiscordClient() (*discordgo.Session, error) {
 	return bot, nil
 }
 
-func SendNotification(message string) error {
+func SendNotification(noticeCount, newNoticeCount int, runtime time.Duration) error {
 	bot, err := InitDiscordClient()
 	if err != nil {
 		return fmt.Errorf("unable to connect discord bot %w", err)
 	}
+
+	message := fmt.Sprintf("Succesfully run script at: %s\nNotices matched: %d\nNew notices: %d\nRuntime: %v",
+		time.Now().Format("January 2, 2006 15:04:05"), noticeCount, newNoticeCount, runtime)
 
 	_, err = bot.ChannelMessageSend(os.Getenv("JOBBYMCJOBFACE_HIRING_CHANNEL_ID"), message)
 	return err
