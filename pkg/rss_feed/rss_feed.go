@@ -3,11 +3,12 @@ package rss_feed
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+
 	"github.com/google/uuid"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
 	"github.com/mmcdole/gofeed"
-	"sync"
 )
 
 type RssFeed struct {
@@ -63,7 +64,9 @@ func NoticesFromFeedItems(items []*gofeed.Item, sourceId string) []*models.Notic
 
 func GetAllNotices(source *store.Source) ([]*models.Notice, error) {
 	var feedFuncs = []func() *RssFeed{
-		GetWwrFeed,
+		GetWwrBackFeed,
+		GetWwrFullFeed,
+		GetWwrFrontFeed,
 		GetRemotiveFeed,
 		GetJobIcyFeed,
 	}
