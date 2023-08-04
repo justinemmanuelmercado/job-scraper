@@ -3,6 +3,7 @@ package rss_feed
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/google/uuid"
@@ -105,7 +106,8 @@ func GetAllNotices(source *store.Source) ([]*models.Notice, error) {
 	close(errCh)
 
 	if len(errCh) > 0 {
-		return nil, <-errCh
+		// Don't stop the process if one feed fails
+		log.Printf("error fetching feeds: %v", <-errCh)
 	}
 
 	var allNotices []*models.Notice

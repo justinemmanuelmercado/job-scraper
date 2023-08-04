@@ -3,13 +3,14 @@ package reddit
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
 	"github.com/thecsw/mira"
-	"os"
-	"sync"
-	"time"
 )
 
 type Handler struct {
@@ -111,12 +112,12 @@ func GetNoticesFromPosts(source *store.Source) ([]*models.Notice, error) {
 		if err != nil {
 			jsonData = []byte{}
 		}
-		t := time.Unix(int64(post.GetTimeCreated()), 0)
+		t := time.Unix(int64(post.GetTimeCreated()), 0).UTC()
 		newNotice := &models.Notice{
 			ID:            uuid.New().String(),
 			Title:         post.Data.Title,
 			Body:          post.Data.SelftextHtml,
-			URL:           post.GetPermalink(),
+			URL:           fmt.Sprintf(`https://www.reddit.com/%s`, post.GetPermalink()),
 			AuthorName:    post.GetAuthor(),
 			AuthorURL:     fmt.Sprintf(`https://www.reddit.com/user/%s`, post.GetAuthor()),
 			ImageURL:      nil,
