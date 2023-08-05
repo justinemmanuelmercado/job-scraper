@@ -17,6 +17,18 @@ type RssFeed struct {
 	sourceName string
 }
 
+var RssFeedPairs = []RssFeed{
+	{"https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss", "WeWorkRemotely"},
+	{"https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss", "WeWorkRemotely"},
+	{"https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss", "WeWorkRemotely"},
+	{"https://remotive.io/remote-jobs/software-dev", "Remotive"},
+	{"https://jobicy.com/jobs/feed/", "JobIcy"},
+	{"https://cryptojobslist.com/jobs.rss?jobLocation=Remote", "CryptoJobsList"},
+	{"https://www.fossjobs.net/rss/all/", "FOSSJobs"},
+	{"http://rss.indeed.com/rss", "Indeed"},
+	{"https://remoteok.io/remote-jobs.rss", "RemoteOK"},
+}
+
 func (rf *RssFeed) FetchItems() ([]*gofeed.Item, error) {
 	fp := gofeed.NewParser()
 
@@ -64,22 +76,14 @@ func NoticesFromFeedItems(items []*gofeed.Item, sourceId string) []*models.Notic
 }
 
 func GetAllNotices(source *store.Source) ([]*models.Notice, error) {
-	var feedFuncs = []func() *RssFeed{
-		GetWwrBackFeed,
-		GetWwrFullFeed,
-		GetWwrFrontFeed,
-		GetRemotiveFeed,
-		GetJobIcyFeed,
-	}
 
 	var wg sync.WaitGroup
-	noticesCh := make(chan []*models.Notice, len(feedFuncs))
-	errCh := make(chan error, len(feedFuncs))
+	noticesCh := make(chan []*models.Notice, len(RssFeedPairs))
+	errCh := make(chan error, len(RssFeedPairs))
 
-	handleFeed := func(feedFunc func() *RssFeed) {
+	handleFeed := func(feed *RssFeed) {
 		defer wg.Done()
 
-		feed := feedFunc()
 		items, err := feed.FetchItems()
 		if err != nil {
 			errCh <- fmt.Errorf("failed to fetch %s: %w", feed.sourceName, err)
@@ -94,10 +98,10 @@ func GetAllNotices(source *store.Source) ([]*models.Notice, error) {
 		noticesCh <- NoticesFromFeedItems(items, sourceItem.ID)
 	}
 
-	wg.Add(len(feedFuncs))
+	wg.Add(len(RssFeedPairs))
 
-	for _, feedFunc := range feedFuncs {
-		go handleFeed(feedFunc)
+	for _, rssFeedPair := range RssFeedPairs {
+		go handleFeed(&rssFeedPair)
 	}
 
 	wg.Wait()

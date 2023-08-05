@@ -92,17 +92,17 @@ const redditSourceName = "Reddit"
 func GetNoticesFromPosts(source *store.Source) ([]*models.Notice, error) {
 	redditSource, err := source.GetSourceByName(redditSourceName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch source id for reddit #{err}")
+		return nil, fmt.Errorf("failed to fetch source id for %s: %w", redditSourceName, err)
 	}
 
 	handler, err := GetRedditHandler()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load reddit handler #{err}")
+		return nil, fmt.Errorf("failed to load handler for reddit: %w", err)
 	}
 
 	posts, err := handler.GetRedditPosts()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load posts #{err}")
+		return nil, fmt.Errorf("failed to load posts from reddit: %w", err)
 	}
 
 	notices := make([]*models.Notice, len(posts))
