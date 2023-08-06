@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
 	"github.com/thecsw/mira"
 )
 
@@ -89,12 +88,7 @@ func (h *Handler) GetRedditPosts() ([]mira.PostListingChild, error) {
 
 const redditSourceName = "Reddit"
 
-func GetNoticesFromPosts(source *store.Source) ([]*models.Notice, error) {
-	redditSource, err := source.GetSourceByName(redditSourceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch source id for %s: %w", redditSourceName, err)
-	}
-
+func GetNoticesFromPosts() ([]*models.Notice, error) {
 	handler, err := GetRedditHandler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load handler for reddit: %w", err)
@@ -121,7 +115,7 @@ func GetNoticesFromPosts(source *store.Source) ([]*models.Notice, error) {
 			AuthorName:    post.GetAuthor(),
 			AuthorURL:     fmt.Sprintf(`https://www.reddit.com/user/%s`, post.GetAuthor()),
 			ImageURL:      nil,
-			SourceID:      redditSource.ID,
+			SourceID:      redditSourceName,
 			Raw:           string(jsonData),
 			Guid:          post.Data.Id,
 			PublishedDate: &t,

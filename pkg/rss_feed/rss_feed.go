@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
 	"github.com/mmcdole/gofeed"
 )
 
@@ -21,11 +20,9 @@ var RssFeedPairs = []RssFeed{
 	{"https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss", "WeWorkRemotely"},
 	{"https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss", "WeWorkRemotely"},
 	{"https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss", "WeWorkRemotely"},
-	{"https://remotive.io/remote-jobs/software-dev", "Remotive"},
-	{"https://jobicy.com/jobs/feed/", "JobIcy"},
-	{"https://cryptojobslist.com/jobs.rss?jobLocation=Remote", "CryptoJobsList"},
+	{"https://remotive.com/remote-jobs/feed/software-dev", "Remotive"},
+	{"https://jobicy.com/?feed=job_feed&job_categories=dev&job_types=full-time", "JobIcy"},
 	{"https://www.fossjobs.net/rss/all/", "FOSSJobs"},
-	{"http://rss.indeed.com/rss", "Indeed"},
 	{"https://remoteok.io/remote-jobs.rss", "RemoteOK"},
 }
 
@@ -75,13 +72,13 @@ func NoticesFromFeedItems(items []*gofeed.Item, sourceId string) []*models.Notic
 	return notices
 }
 
-func GetAllNotices(source *store.Source) ([]*models.Notice, error) {
+func GetAllNotices() ([]*models.Notice, error) {
 
 	var wg sync.WaitGroup
 	noticesCh := make(chan []*models.Notice, len(RssFeedPairs))
 	errCh := make(chan error, len(RssFeedPairs))
 
-	handleFeed := func(feed *RssFeed) {
+	handleFeed := func(feed RssFeed) {
 		defer wg.Done()
 
 		items, err := feed.FetchItems()
@@ -89,19 +86,14 @@ func GetAllNotices(source *store.Source) ([]*models.Notice, error) {
 			errCh <- fmt.Errorf("failed to fetch %s: %w", feed.sourceName, err)
 			return
 		}
-
-		sourceItem, err := source.GetSourceByName(feed.sourceName)
-		if err != nil {
-			errCh <- fmt.Errorf("failed to fetch %s source id: %w", feed.sourceName, err)
-			return
-		}
-		noticesCh <- NoticesFromFeedItems(items, sourceItem.ID)
+		fmt.Printf("Fetched %d items from %s\n", len(items), feed.sourceName)
+		noticesCh <- NoticesFromFeedItems(items, feed.sourceName)
 	}
 
 	wg.Add(len(RssFeedPairs))
 
 	for _, rssFeedPair := range RssFeedPairs {
-		go handleFeed(&rssFeedPair)
+		go handleFeed(rssFeedPair)
 	}
 
 	wg.Wait()

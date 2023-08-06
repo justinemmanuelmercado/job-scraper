@@ -35,8 +35,8 @@ func setUpDatabase() (*pgx.Conn, error) {
 	return db, nil
 }
 
-func getRssFeedNotices(source *store.Source) ([]*models.Notice, error) {
-	newNotices, err := rss_feed.GetAllNotices(source)
+func getRssFeedNotices() ([]*models.Notice, error) {
+	newNotices, err := rss_feed.GetAllNotices()
 	if err != nil {
 		return nil, fmt.Errorf("error getting Notices from RSS feeds: %w", err)
 	}
@@ -53,14 +53,12 @@ func main() {
 		log.Fatalf("Error connecting to database: %v\n", err)
 	}
 
-	source := store.InitSource(db)
-
-	rssFeedNotices, err := getRssFeedNotices(source)
+	rssFeedNotices, err := getRssFeedNotices()
 	if err != nil {
 		log.Fatalf("error getting notices from rss feeds: %v\n", err)
 	}
 
-	redditNotices, err := reddit.GetNoticesFromPosts(source)
+	redditNotices, err := reddit.GetNoticesFromPosts()
 	if err != nil {
 		log.Fatalf("error getting notices from reddit: %v\n", err)
 	}
@@ -71,7 +69,6 @@ func main() {
 	noticeStore := store.InitNotice(db)
 	oldNoticeCount := noticeStore.GetCount()
 	err = noticeStore.CreateNotices(allNotices)
-
 	if err != nil {
 		log.Fatalf("Error creating notices: %v\n", err)
 	}
