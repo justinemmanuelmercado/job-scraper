@@ -127,5 +127,6 @@ func GetNoticesFromPosts() ([]*models.Notice, error) {
 
 		notices[i] = newNotice
 	}
+	fmt.Printf("Fetched %d items from %s \n", len(notices), redditSourceName)
 	return notices, nil
 }

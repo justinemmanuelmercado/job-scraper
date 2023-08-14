@@ -10,15 +10,15 @@ import (
 
 const tableName = "Notice"
 
-type Notice struct {
+type NoticeStore struct {
 	conn *pgx.Conn
 }
 
-func InitNotice(conn *pgx.Conn) *Notice {
-	return &Notice{conn: conn}
+func InitNotice(conn *pgx.Conn) *NoticeStore {
+	return &NoticeStore{conn: conn}
 }
 
-func (n *Notice) CreateNotices(notices []*models.Notice) error {
+func (n *NoticeStore) CreateNotices(notices []*models.Notice) error {
 	query := fmt.Sprintf(`
 	INSERT INTO "%s" (
 		id,
@@ -73,7 +73,7 @@ func (n *Notice) CreateNotices(notices []*models.Notice) error {
 	return br.Close()
 }
 
-func (n *Notice) GetCount() int {
+func (n *NoticeStore) GetCount() int {
 	var count int
 	err := n.conn.QueryRow(context.Background(), fmt.Sprintf(`SELECT COUNT(*) FROM "%s"`, tableName)).Scan(&count)
 	if err != nil {
@@ -82,7 +82,7 @@ func (n *Notice) GetCount() int {
 	return count
 }
 
-func (n *Notice) GetNotice(id string) (*models.Notice, error) {
+func (n *NoticeStore) GetNotice(id string) (*models.Notice, error) {
 	var notice models.Notice
 	err := n.conn.QueryRow(context.Background(), fmt.Sprintf(`SELECT * FROM "%s" WHERE id=$1`, tableName), id).Scan(
 		&notice.ID,

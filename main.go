@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/discord"
+	"github.com/justinemmanuelmercado/go-scraper/pkg/hackernews"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/reddit"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/rss_feed"
@@ -44,6 +45,11 @@ func getRssFeedNotices() ([]*models.Notice, error) {
 	return newNotices, nil
 }
 
+func getHackerNews() []*models.Notice {
+	newNotices := hackernews.ScrapeCurrentWhoIsHiringPosts()
+	return newNotices
+}
+
 func main() {
 	startTime := time.Now()
 	loadEnvFile()
@@ -63,7 +69,10 @@ func main() {
 		log.Fatalf("error getting notices from reddit: %v\n", err)
 	}
 
+	hnNotices := getHackerNews()
+
 	allNotices := append(rssFeedNotices, redditNotices...)
+	allNotices = append(allNotices, hnNotices...)
 	log.Printf("Trying to insert %d notices \n", len(allNotices))
 
 	noticeStore := store.InitNotice(db)
