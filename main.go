@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
+	errorHandler "github.com/justinemmanuelmercado/go-scraper/pkg"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/discord"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/hackernews"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
@@ -60,14 +61,10 @@ func main() {
 	}
 
 	rssFeedNotices, err := getRssFeedNotices()
-	if err != nil {
-		log.Fatalf("error getting notices from rss feeds: %v\n", err)
-	}
+	errorHandler.HandleErrorWithSection(err, "Failed to get notices from rss feeds", "RSS Feeds")
 
 	redditNotices, err := reddit.GetNoticesFromPosts()
-	if err != nil {
-		log.Fatalf("error getting notices from reddit: %v\n", err)
-	}
+	errorHandler.HandleErrorWithSection(err, "Failed to get notices from reddit", "Reddit")
 
 	hnNotices := getHackerNews()
 
@@ -79,15 +76,23 @@ func main() {
 	oldNoticeCount := noticeStore.GetCount()
 	err = noticeStore.CreateNotices(allNotices)
 	if err != nil {
-		log.Fatalf("Error creating notices: %v\n", err)
+		log.Fatalf("Error inserting notices: %v\n", err)
 	}
 
 	newNoticeCount := noticeStore.GetCount()
+	noticesInserted := newNoticeCount - oldNoticeCount
+	latestPosts := noticeStore.GetLatest(noticesInserted)
 
-	err = discord.SendNotification(len(allNotices), newNoticeCount-oldNoticeCount, time.Since(startTime))
-	if err != nil {
-		log.Println("Discord notification not sent")
+	bot, dscErr := discord.InitDiscordClient()
+
+	if dscErr == nil {
+		discord.SendList(bot, latestPosts)
+		err = discord.SendSuccessNotificatioin(bot, len(allNotices), noticesInserted, time.Since(startTime))
+		errorHandler.HandleErrorWithSection(err, "Failed to send success notification", "Discord")
+	} else {
+		log.Println("Discord client not initialized")
 	}
+
 	log.Println("Script run successfully")
 
 }

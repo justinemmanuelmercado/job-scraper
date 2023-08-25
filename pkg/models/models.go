@@ -13,7 +13,7 @@ type Notice struct {
 	AuthorURL     string
 	ImageURL      *string
 	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	UpdatedAt     *time.Time
 	SourceID      string
 	Raw           string
 	Guid          string

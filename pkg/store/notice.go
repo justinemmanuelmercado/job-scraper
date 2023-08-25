@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	errorHandler "github.com/justinemmanuelmercado/go-scraper/pkg"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
 )
 
@@ -82,26 +83,44 @@ func (n *NoticeStore) GetCount() int {
 	return count
 }
 
-func (n *NoticeStore) GetNotice(id string) (*models.Notice, error) {
-	var notice models.Notice
-	err := n.conn.QueryRow(context.Background(), fmt.Sprintf(`SELECT * FROM "%s" WHERE id=$1`, tableName), id).Scan(
-		&notice.ID,
-		&notice.Title,
-		&notice.Body,
-		&notice.URL,
-		&notice.AuthorName,
-		&notice.AuthorURL,
-		&notice.ImageURL,
-		&notice.CreatedAt,
-		&notice.UpdatedAt,
-		&notice.SourceID,
-		&notice.Raw,
-		&notice.Guid,
-	)
-
+func (n *NoticeStore) GetLatest(count int) []models.Notice {
+	var notices []models.Notice
+	rows, err := n.conn.Query(context.Background(), fmt.Sprintf(`SELECT * FROM "%s" ORDER BY "createdAt" DESC LIMIT $1`, tableName), count)
 	if err != nil {
-		return nil, err
+		errorHandler.HandleErrorWithSection(err, "Error querying latest notices", "Database")
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var notice models.Notice
+		err := rows.Scan(
+			&notice.ID,
+			&notice.Title,
+			&notice.Body,
+			&notice.URL,
+			&notice.AuthorName,
+			&notice.AuthorURL,
+			&notice.ImageURL,
+			&notice.CreatedAt,
+			&notice.UpdatedAt,
+			&notice.SourceID,
+			&notice.Raw,
+			&notice.Guid,
+			&notice.PublishedDate,
+		)
+		if err != nil {
+			errorHandler.HandleErrorWithSection(err, "Error scanning row", "Database")
+			return nil
+		}
+		notices = append(notices, notice)
 	}
 
-	return &notice, nil
+	err = rows.Err()
+	if err != nil {
+		errorHandler.HandleErrorWithSection(err, "Error iterating rows", "Database")
+		return nil
+	}
+
+	return notices
 }

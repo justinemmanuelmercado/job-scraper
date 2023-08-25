@@ -1,9 +1,9 @@
 package reddit
 
 import (
-	"errors"
-	"github.com/thecsw/mira"
 	"testing"
+
+	"github.com/thecsw/mira"
 )
 
 type mockRedditClient struct {
@@ -31,7 +31,7 @@ func TestGetRedditPosts(t *testing.T) {
 		{
 			name:     "Error retrieving posts",
 			posts:    nil,
-			err:      errors.New("error retrieving posts"),
+			err:      New("error retrieving posts"),
 			expected: 0,
 		},
 	}

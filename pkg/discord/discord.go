@@ -2,10 +2,13 @@ package discord
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
+	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/bwmarrin/discordgo"
+	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
 )
 
 func InitDiscordClient() (*discordgo.Session, error) {
@@ -18,15 +21,45 @@ func InitDiscordClient() (*discordgo.Session, error) {
 	return bot, nil
 }
 
-func SendNotification(noticeCount, newNoticeCount int, runtime time.Duration) error {
-	bot, err := InitDiscordClient()
+func convertToSiteUrl(id string) string {
+	return fmt.Sprintf("https://workfindy.com/%s", id)
+}
+
+func sendEmbed(bot *discordgo.Session, channelID string, embed *discordgo.MessageEmbed) {
+	_, err := bot.ChannelMessageSendEmbed(channelID, embed)
+
 	if err != nil {
-		return fmt.Errorf("unable to connect discord bot %w", err)
+		log.Printf("Failed to send embed: %v", err) // Log the error or handle it as you prefer
 	}
+}
 
-	message := fmt.Sprintf("Succesfully run script at: %s\nNotices matched: %d\nNew notices: %d\nRuntime: %v",
-		time.Now().Format("January 2, 2006 15:04:05"), noticeCount, newNoticeCount, runtime)
+func SendList(bot *discordgo.Session, notices []models.Notice) {
+	truncateLength := 500
+	for _, notice := range notices {
+		converter := md.NewConverter("", true, nil)
+		notice.Body, _ = converter.ConvertString(notice.Body)
 
-	_, err = bot.ChannelMessageSend(os.Getenv("JOBBYMCJOBFACE_HIRING_CHANNEL_ID"), message)
+		if len(notice.Body) > truncateLength {
+			notice.Body = notice.Body[:truncateLength] + "..."
+		}
+
+		// Printf
+		notice.Body += fmt.Sprintf("**%s**\n%s\n\n[View on site](%s)", notice.Title, notice.Body, convertToSiteUrl(notice.ID))
+
+		embed := &discordgo.MessageEmbed{
+			Title:       notice.Title,
+			URL:         notice.URL,
+			Description: notice.Body,
+		}
+
+		sendEmbed(bot, os.Getenv("JOBBYMCJOBFACE_HIRING_CHANNEL_ID"), embed)
+	}
+}
+
+func SendSuccessNotificatioin(bot *discordgo.Session, scrapedCount, newNoticeCount int, runtime time.Duration) error {
+	message := fmt.Sprintf("Succesfully run script at: %s\nNotices matched: %d\nNew notices: %d\nRuntime: %v\nSite URL: https://workfindy.com/",
+		time.Now().Format("January 2, 2006 15:04:05"), scrapedCount, newNoticeCount, runtime)
+
+	_, err := bot.ChannelMessageSend(os.Getenv("JOBBYMCJOBFACE_HIRING_CHANNEL_ID"), message)
 	return err
 }

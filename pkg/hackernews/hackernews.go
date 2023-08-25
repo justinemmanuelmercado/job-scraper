@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	errorHandler "github.com/justinemmanuelmercado/go-scraper/pkg"
 	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
 )
 
@@ -54,21 +54,21 @@ func getStory(id int, wg *sync.WaitGroup, ch chan<- Story) {
 	defer wg.Done()
 	storyResp, err := http.Get(fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json?print=pretty", id))
 	if err != nil {
-		log.Printf("Unable to get story with ID of %d\n", id)
+		errorHandler.HandleErrorWithSection(err, fmt.Sprintf("Unable to get story with ID of %d\n", id), "HackerNews")
 		return
 	}
 	defer storyResp.Body.Close()
 
 	storyBytes, err := io.ReadAll(storyResp.Body)
 	if err != nil {
-		log.Printf("Unable to convert response with ID of %d to string", id)
+		errorHandler.HandleErrorWithSection(err, fmt.Sprintf("Unable to convert response with ID of %d to string\n", id), "HackerNews")
 		return
 	}
 
 	var story Story
 	err = json.Unmarshal(storyBytes, &story)
 	if err != nil {
-		log.Printf("Unable to decode response with ID of %d\n", id)
+		errorHandler.HandleErrorWithSection(err, fmt.Sprintf("Unable to decode response with ID of %d\n", id), "HackerNews")
 		return
 	}
 
@@ -81,14 +81,12 @@ func ScrapeCurrentWhoIsHiringPosts() []*models.Notice {
 	var parent Parent
 
 	resp, err := http.Get(fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json?print=pretty", currentId))
-	if err != nil {
-		fmt.Println("Unable to get current who is hiring post")
-		return nil
-	}
+	errorHandler.HandleErrorWithSection(err, "Unable to get current who is hiring post", "HackerNews")
+
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(&parent); err != nil {
-		fmt.Println("Unable to decode response for current who is hiring post")
+		errorHandler.HandleErrorWithSection(err, "Unable to decode response for current who is hiring post", "HackerNews")
 		return nil
 	}
 
