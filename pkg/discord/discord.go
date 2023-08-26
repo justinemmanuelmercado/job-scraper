@@ -44,7 +44,7 @@ func SendList(bot *discordgo.Session, notices []models.Notice) {
 		}
 
 		// Printf
-		notice.Body += fmt.Sprintf("**%s**\n%s\n\n[View on site](%s)", notice.Title, notice.Body, convertToSiteUrl(notice.ID))
+		notice.Body = fmt.Sprintf("%s\n[View on site](%s)", notice.Body, convertToSiteUrl(notice.ID))
 
 		embed := &discordgo.MessageEmbed{
 			Title:       notice.Title,
