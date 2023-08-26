@@ -3,6 +3,7 @@ package reddit
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"os"
 	"sync"
 	"time"
@@ -110,7 +111,7 @@ func GetNoticesFromPosts() ([]*models.Notice, error) {
 		newNotice := &models.Notice{
 			ID:            uuid.New().String(),
 			Title:         post.Data.Title,
-			Body:          post.Data.SelftextHtml,
+			Body:          html.UnescapeString(post.Data.SelftextHtml),
 			URL:           fmt.Sprintf(`https://www.reddit.com/%s`, post.GetPermalink()),
 			AuthorName:    post.GetAuthor(),
 			AuthorURL:     fmt.Sprintf(`https://www.reddit.com/user/%s`, post.GetAuthor()),

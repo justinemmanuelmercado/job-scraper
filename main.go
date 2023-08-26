@@ -81,6 +81,12 @@ func main() {
 
 	newNoticeCount := noticeStore.GetCount()
 	noticesInserted := newNoticeCount - oldNoticeCount
+
+	if noticesInserted == 0 {
+		log.Println("No new notices inserted")
+		return
+	}
+
 	latestPosts := noticeStore.GetLatest(noticesInserted)
 
 	bot, dscErr := discord.InitDiscordClient()
