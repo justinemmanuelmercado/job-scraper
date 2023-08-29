@@ -39,6 +39,8 @@ func SendList(bot *discordgo.Session, notices []models.Notice) {
 		converter := md.NewConverter("", true, nil)
 		notice.Body, _ = converter.ConvertString(notice.Body)
 
+		notice.Body = fmt.Sprintf("From %s \n %s", notice.SourceID, notice.Body)
+
 		if len(notice.Body) > truncateLength {
 			notice.Body = notice.Body[:truncateLength] + "..."
 		}
