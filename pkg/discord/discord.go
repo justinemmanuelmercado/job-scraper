@@ -34,15 +34,20 @@ func sendEmbed(bot *discordgo.Session, channelID string, embed *discordgo.Messag
 }
 
 func SendList(bot *discordgo.Session, notices []models.Notice) {
-	truncateLength := 500
+	truncateBody := 500
+	truncateTitle := 250
 	for _, notice := range notices {
 		converter := md.NewConverter("", true, nil)
 		notice.Body, _ = converter.ConvertString(notice.Body)
 
 		notice.Body = fmt.Sprintf("From %s \n %s", notice.SourceID, notice.Body)
 
-		if len(notice.Body) > truncateLength {
-			notice.Body = notice.Body[:truncateLength] + "..."
+		if len(notice.Body) > truncateBody {
+			notice.Body = notice.Body[:truncateBody] + "..."
+		}
+
+		if len(notice.Title) > truncateTitle {
+			notice.Title = notice.Title[:truncateTitle] + "..."
 		}
 
 		// Printf
