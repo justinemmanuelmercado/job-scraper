@@ -3,6 +3,7 @@ package hackernews
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"sort"
@@ -46,6 +47,10 @@ func extractTitle(text string) (string, string) {
 			body = text[20:]
 		}
 	}
+
+	// Decode title using html
+	title = html.UnescapeString(title)
+	body = html.UnescapeString(body)
 
 	return title, body
 }
