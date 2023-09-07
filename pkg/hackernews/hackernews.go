@@ -115,7 +115,9 @@ func ScrapeCurrentWhoIsHiringPosts() []*models.Notice {
 
 	for story := range storyChannel {
 		s := StoryToNotice(story)
-		notices = append(notices, &s)
+		if FilterOutLessThan10Len(s) {
+			notices = append(notices, &s)
+		}
 	}
 
 	fmt.Printf("Fetched %d items from HackerNews\n", len(notices))
@@ -147,4 +149,11 @@ func StoryToNotice(story Story) models.Notice {
 		Guid:          fmt.Sprint(story.Id),
 		PublishedDate: &t,
 	}
+}
+
+func FilterOutLessThan10Len(notice models.Notice) bool {
+	if len(notice.Title) < 10 && len(notice.Body) < 10 {
+		return false
+	}
+	return true
 }
