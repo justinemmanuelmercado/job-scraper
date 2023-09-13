@@ -124,3 +124,38 @@ func (n *NoticeStore) GetLatest(count int) []models.Notice {
 
 	return notices
 }
+
+func (n *NoticeStore) GetLatestNotices() ([]*models.Notice, error) {
+	rows, err := n.conn.Query(context.Background(), `
+			SELECT * FROM "Notice" 
+			WHERE "createdAt" >= now() - interval '1 day'
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	notices := []*models.Notice{}
+	for rows.Next() {
+		var notice models.Notice
+		// Assume models.Notice has the same fields as your Prisma schema
+		if err := rows.Scan(&notice.ID,
+			&notice.Title,
+			&notice.Body,
+			&notice.URL,
+			&notice.AuthorName,
+			&notice.AuthorURL,
+			&notice.ImageURL,
+			&notice.CreatedAt,
+			&notice.UpdatedAt,
+			&notice.SourceID,
+			&notice.Raw,
+			&notice.Guid,
+			&notice.PublishedDate); err != nil {
+			return nil, err
+		}
+		notices = append(notices, &notice)
+	}
+
+	return notices, nil
+}

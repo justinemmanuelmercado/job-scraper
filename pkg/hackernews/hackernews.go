@@ -48,6 +48,23 @@ func extractTitle(text string) (string, string) {
 		}
 	}
 
+	stack := []rune{}
+	newTitle := []rune{}
+
+	for _, char := range title {
+		if char == '(' || char == '[' || char == '{' {
+			stack = append(stack, char)
+		} else if char == ')' || char == ']' || char == '}' {
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
+		} else {
+			newTitle = append(newTitle, char)
+		}
+	}
+
+	title = string(newTitle)
+
 	// Decode title using html
 	title = html.UnescapeString(title)
 	body = html.UnescapeString(body)
