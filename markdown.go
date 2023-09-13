@@ -63,7 +63,7 @@ func GenerateMarkdown() {
 	defer f.Close()
 
 	// Write the header
-	f.WriteString("# Latest Notices\n")
+	f.WriteString(fmt.Sprintf("# %d New Remote Listings\n", len(notices)))
 	f.WriteString(time.Now().Format("2006-01-02") + "\n\n")
 
 	// Loop through the notices and write them to the file
