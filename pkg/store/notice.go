@@ -127,8 +127,10 @@ func (n *NoticeStore) GetLatest(count int) []models.Notice {
 
 func (n *NoticeStore) GetLatestNotices() ([]*models.Notice, error) {
 	rows, err := n.conn.Query(context.Background(), `
-			SELECT * FROM "Notice" 
-			WHERE "createdAt" >= now() - interval '1 day'
+	SELECT * FROM "Notice"
+	WHERE "createdAt" >= (now() - interval '1 day')
+	AND "sourceId" != 'Reddit'
+	ORDER BY "publishedDate" DESC
 	`)
 	if err != nil {
 		return nil, err

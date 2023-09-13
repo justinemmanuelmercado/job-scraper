@@ -51,6 +51,7 @@ func extractTitle(text string) (string, string) {
 	stack := []rune{}
 	newTitle := []rune{}
 
+	// Remove unclosed brackets in the title
 	for _, char := range title {
 		if char == '(' || char == '[' || char == '{' {
 			stack = append(stack, char)
