@@ -64,14 +64,15 @@ func GenerateMarkdown() {
 
 	// Write the header
 	f.WriteString(fmt.Sprintf("# %d New Remote Listings\n", len(notices)))
+	f.WriteString("# Visit [Workfindy](https://workfindy.com/jobs) for a full list!\n\n")
 	f.WriteString(time.Now().Format("2006-01-02") + "\n\n")
 
 	// Loop through the notices and write them to the file
 	for _, notice := range notices {
 
-		f.WriteString(fmt.Sprintf("## %s\n\n", printToHTMLAndTruncate(notice.Title, 100)))
+		f.WriteString(fmt.Sprintf("## %s\n\n", printToHTMLAndTruncate(notice.Title, 80)))
 		f.WriteString(fmt.Sprintf("**From**: %s\n\n", notice.SourceID))
-		f.WriteString(fmt.Sprintf("%s\n\n", printToHTMLAndTruncate(notice.Body, 500)))
+		f.WriteString(fmt.Sprintf("%s\n\n", printToHTMLAndTruncate(notice.Body, 200)))
 		f.WriteString(fmt.Sprintf("**Read more**: [Here](https://workfindy.com/%s)\n\n", html.EscapeString(notice.ID)))
 		f.WriteString("---\n\n")
 	}
