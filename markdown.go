@@ -70,7 +70,7 @@ func GenerateMarkdown() {
 	// Loop through the notices and write them to the file
 	for _, notice := range notices {
 
-		f.WriteString(fmt.Sprintf("## %s\n\n", printToHTMLAndTruncate(notice.Title, 80)))
+		f.WriteString(fmt.Sprintf("## **%s**\n\n", printToHTMLAndTruncate(notice.Title, 80)))
 		f.WriteString(fmt.Sprintf("**From**: %s\n\n", notice.SourceID))
 		f.WriteString(fmt.Sprintf("%s\n\n", printToHTMLAndTruncate(notice.Body, 200)))
 		f.WriteString(fmt.Sprintf("**Read more**: [Here](https://workfindy.com/%s)\n\n", html.EscapeString(notice.ID)))
