@@ -29,9 +29,11 @@ type Parent struct {
 	Time int64
 }
 
-var hnSourceName = "HackerNews"
-var currentId = 37739028 // Automate getting this
-var toGet = 20           // Only need 20 I think
+var (
+	hnSourceName = "HackerNews"
+	currentId    = 38099086 // Automate getting this
+	toGet        = 400      // Only need 20 I think
+)
 
 func extractTitle(text string) (string, string) {
 	title := ""
