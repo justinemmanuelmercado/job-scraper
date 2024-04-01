@@ -2,51 +2,52 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.20
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.20
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
 
-    - name: Get dependencies
-      run: go get -v -t -d ./...
+      - name: Get dependencies
+        run: go get -v -t -d ./...
 
-    - name: Build
-      run: go build -v -o scraper
+      - name: Build
+        run: go build -v -o scraper
 
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: scraper
-        path: |
-          ./scraper
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: scraper
+          path: |
+            ./scraper
 
   deploy:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Download the binary
-      uses: actions/download-artifact@v2
-      with:
-        name: scraper
+      - name: Download the binary
+        uses: actions/download-artifact@v2
+        with:
+          name: scraper
 
-    - name: Install SSH key
-      run: |
-        mkdir -p ~/.ssh/
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-    - name: Deploy to Digital Ocean
-      run: |
-        scp -P 2269 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa scraper root@${{ secrets.DROPLET_IP }}:/root/scraper
-        ssh -p 2269 -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'chmod +x /root/scraper; /root/scraper'
+      - name: Deploy to Digital Ocean
+        run: |
+          scp -P ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa scraper root@${{ secrets.DROPLET_IP }}:/root/scraper
+          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'chmod +x /root/scraper; /root/scraper'
+
