@@ -1,6 +1,6 @@
 module github.com/justinemmanuelmercado/go-scraper
 
-go 1.19
+go 1.22
 
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.5.0
