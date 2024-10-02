@@ -31,8 +31,8 @@ type Parent struct {
 
 var (
 	hnSourceName = "HackerNews"
-	currentId    = 41425910 // Automate getting this
-	toGet        = 30       // Only need 20 I think
+	currentId    = 41709301 // Automate getting this
+	toGet        = 300      // Only need 20 I think
 )
 
 func extractTitle(text string) (string, string) {
