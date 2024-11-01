@@ -31,7 +31,7 @@ type Parent struct {
 
 var (
 	hnSourceName = "HackerNews"
-	currentId    = 41709301 // Automate getting this
+	currentId    = 42017580 // Automate getting this
 	toGet        = 30
 )
 
