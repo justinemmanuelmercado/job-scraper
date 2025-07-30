@@ -1,116 +1,67 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
-	errorHandler "github.com/justinemmanuelmercado/go-scraper/pkg"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/discord"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/hackernews"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/models"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/reddit"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/rss_feed"
-	"github.com/justinemmanuelmercado/go-scraper/pkg/store"
+	"github.com/justinemmanuelmercado/go-scraper/internal/infrastructure/container"
 )
 
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("error loading environment variables %w", err)
-	}
-}
-
-func setUpDatabase() (*pgx.Conn, error) {
-	dbPw := os.Getenv("POSTGRES_PASSWORD")
-	dbUser := os.Getenv("POSTGRES_USER")
-	dbName := os.Getenv("POSTGRES_DB")
-	dbUrl := fmt.Sprintf("postgresql://%s:%s@localhost:5432/%s?sslmode=disable", dbUser, dbPw, dbName)
-	db, err := store.OpenDB(dbUrl)
-	if err != nil {
-		return nil, fmt.Errorf("error connecting to database: %v", err)
-	}
-
-	return db, nil
-}
-
-func getRssFeedNotices() ([]*models.Notice, error) {
-	newNotices, err := rss_feed.GetAllNotices()
-	if err != nil {
-		return nil, fmt.Errorf("error getting Notices from RSS feeds: %w", err)
-	}
-
-	return newNotices, nil
-}
-
-func getHackerNews() []*models.Notice {
-	newNotices := hackernews.ScrapeCurrentWhoIsHiringPosts()
-	return newNotices
-}
-
-func scrape() {
-	startTime := time.Now()
-
-	db, err := setUpDatabase()
-	if err != nil {
-		log.Fatalf("Error connecting to database: %v\n", err)
-	}
-
-	rssFeedNotices, err := getRssFeedNotices()
-	errorHandler.HandleErrorWithSection(err, "Failed to get notices from rss feeds", "RSS Feeds")
-
-	redditNotices, err := reddit.GetNoticesFromPosts()
-	errorHandler.HandleErrorWithSection(err, "Failed to get notices from reddit", "Reddit")
-
-	hnNotices := getHackerNews()
-
-	allNotices := append(rssFeedNotices, redditNotices...)
-	allNotices = append(allNotices, hnNotices...)
-	log.Printf("Trying to insert %d notices \n", len(allNotices))
-
-	noticeStore := store.InitNotice(db)
-	oldNoticeCount := noticeStore.GetCount()
-	err = noticeStore.CreateNotices(allNotices)
-	if err != nil {
-		log.Fatalf("Error inserting notices: %v\n", err)
-	}
-
-	newNoticeCount := noticeStore.GetCount()
-	noticesInserted := newNoticeCount - oldNoticeCount
-
-	if noticesInserted == 0 {
-		log.Println("No new notices inserted")
-		return
-	}
-
-	latestPosts := noticeStore.GetLatest(noticesInserted)
-
-	bot, dscErr := discord.InitDiscordClient()
-
-	if dscErr == nil {
-		discord.SendList(bot, latestPosts)
-		err = discord.SendSuccessNotificatioin(bot, len(allNotices), noticesInserted, time.Since(startTime))
-		errorHandler.HandleErrorWithSection(err, "Failed to send success notification", "Discord")
-	} else {
-		log.Println("Discord client not initialized")
-	}
-
-	log.Println("Script run successfully")
-
-}
-
 func main() {
-	// Define a flag
+	// Parse command line flags
 	genMarkdown := flag.Bool("markdown", false, "Generate Markdown file for latest notices")
 	flag.Parse()
 
+	// Create application context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Set up graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	
+	go func() {
+		<-sigChan
+		log.Println("Received shutdown signal, initiating graceful shutdown...")
+		cancel()
+	}()
+
+	// Initialize dependency container
+	container, err := container.NewContainer()
+	if err != nil {
+		log.Fatalf("Failed to initialize application: %v", err)
+	}
+	defer func() {
+		if closeErr := container.Close(); closeErr != nil {
+			container.Logger.WithError(closeErr).Error("Error during application shutdown")
+		}
+	}()
+
+	logger := container.Logger.WithComponent("main")
+	logger.Info("Application started successfully")
+
+	// Add timeout to context for scraping operations
+	timeoutCtx, timeoutCancel := context.WithTimeout(ctx, container.Config.App.GracefulTimeout)
+	defer timeoutCancel()
+
+	// Execute the appropriate workflow
 	if *genMarkdown {
-		GenerateMarkdown()
+		logger.Info("Starting markdown generation workflow")
+		if err := container.ScrapeJobsUC.ExecuteWithMarkdownGeneration(timeoutCtx); err != nil {
+			logger.WithError(err).Error("Markdown generation workflow failed")
+			os.Exit(1)
+		}
+		logger.Info("Markdown generation workflow completed successfully")
 	} else {
-		scrape()
+		logger.Info("Starting job scraping workflow")
+		if err := container.ScrapeJobsUC.Execute(timeoutCtx); err != nil {
+			logger.WithError(err).Error("Job scraping workflow failed")
+			os.Exit(1)
+		}
+		logger.Info("Job scraping workflow completed successfully")
 	}
 }
